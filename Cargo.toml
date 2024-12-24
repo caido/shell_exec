@@ -1,0 +1,27 @@
+[package]
+name = "shell_exec"
+version = "0.1.0"
+authors = ["Caido Labs Inc. <dev@caido.io>"]
+description = "Cross platform library to execute shell scripts"
+repository = "https://github.com/caido/shell_exec"
+license = "MIT"
+edition = "2021"
+
+[lib]
+name = "shell_exec"
+path = "src/lib.rs"
+
+[dependencies]
+bstr = "1.9"
+log = "0.4"
+strum = { version = "0.26", features = ["derive"] }
+tempfile = "3.12"
+thiserror = "1"
+tokio = { version = "1", features = [
+    "time",
+    "process",
+    "io-util",
+    "macros",
+    "rt",
+] }
+typed-builder = "0.20"
