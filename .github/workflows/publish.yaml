@@ -18,7 +18,7 @@ jobs:
         with:
           cache: false
 
-      - uses: caido/caido-publish-crates@v2
+      - uses: caido/action-publish-crates@v2
         with:
             registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
             ignore-unpublished-changes: true
