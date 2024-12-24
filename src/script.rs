@@ -48,7 +48,7 @@ fn init_line(script: &str, shell: Shell) -> String {
     match shell {
         Shell::Cmd => format!("{script} 2> nul"),
         Shell::Powershell => format!("{script} 2>$null"),
-        Shell::Bash | Shell::Zsh | Shell::Sh => format!("{script} > /dev/null 2>&1"),
+        Shell::Bash | Shell::Zsh | Shell::Sh | Shell::Wsl => format!("{script} > /dev/null 2>&1"),
     }
 }
 

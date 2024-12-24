@@ -12,14 +12,17 @@ pub enum Shell {
     Cmd,
     #[strum(serialize = "powershell")]
     Powershell,
+    #[strum(serialize = "wsl")]
+    Wsl,
 }
 
 impl Shell {
-    pub fn command_arg<'a>(&self) -> &'a str {
+    pub fn command_arg(&self) -> Option<&'static str> {
         match self {
-            Self::Cmd => "/C",
-            Self::Powershell => "-Command",
-            _ => "-c",
+            Self::Cmd => Some("/C"),
+            Self::Powershell => Some("-Command"),
+            Self::Wsl => None,
+            _ => Some("-c"),
         }
     }
 }
