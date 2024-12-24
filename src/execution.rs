@@ -9,7 +9,7 @@ use tokio::process::Command;
 use tokio::time::timeout;
 use typed_builder::TypedBuilder;
 
-use crate::{Result, Script, Shell, ShellError};
+use crate::{CommandArgument, Result, Script, Shell, ShellError};
 
 #[derive(TypedBuilder)]
 pub struct Execution {
@@ -33,13 +33,17 @@ impl Execution {
         V: AsRef<OsStr>,
     {
         // Prepare script
-        let full_cmd = Script::build(self.shell, self.cmd, self.init).await?;
+        let script = Script::build(self.shell, self.cmd, self.init).await?;
 
         // Spawn
-        // NOTE: If kill_on_drop is proven not sufficiently reliable, we might want to explicitly kill the process before exiting the function. This approach is slower since it awaits the process termination.
-        let mut cmd_handle = Command::new(self.shell.to_string())
-            .arg(self.shell.command_arg())
-            .arg(&full_cmd)
+        // NOTE: If kill_on_drop is proven not sufficiently reliable, we might want to explicitly kill the process
+        // before exiting the function. This approach is slower since it awaits the process termination.
+        let mut builder = Command::new(self.shell.to_string());
+        for arg in self.shell.command_args() {
+            builder.argument(arg);
+        }
+        let mut cmd_handle = builder
+            .argument(&script.argument())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -95,7 +99,7 @@ mod tests {
 
     #[tokio::test]
     #[cfg(unix)]
-    async fn should_execute() {
+    async fn should_execute_sh() {
         let execution = Execution::builder()
             .shell(Shell::Sh)
             .cmd(r#"jq -r .hello"#.to_string())
@@ -105,6 +109,26 @@ mod tests {
         let data = execution.execute(b"{\"hello\":\"world\"}").await.unwrap();
 
         assert_eq!(b"world"[..], data);
+    }
+
+    #[tokio::test]
+    #[cfg(unix)]
+    async fn should_execute_bash() {
+        let execution = Execution::builder()
+            .shell(Shell::Bash)
+            .cmd(
+                r#"
+                INPUT=`cat -`;
+                echo "hello $INPUT"
+                "#
+                .to_string(),
+            )
+            .timeout(Duration::from_millis(10000))
+            .build();
+
+        let data = execution.execute(b"world").await.unwrap();
+
+        assert_eq!(b"hello world"[..], data);
     }
 
     #[tokio::test]
@@ -205,5 +229,25 @@ mod tests {
         let data = execution.execute(b"world").await.unwrap();
 
         assert_eq!(b"hello\n & WORLD"[..], data);
+    }
+
+    #[tokio::test]
+    #[cfg(windows)]
+    async fn should_execute_wsl() {
+        let execution = Execution::builder()
+            .shell(Shell::Wsl)
+            .cmd(
+                r#"
+                INPUT=$(cat);
+                echo "hello $INPUT"
+                "#
+                .to_string(),
+            )
+            .timeout(Duration::from_millis(10000))
+            .build();
+
+        let data = execution.execute(b"world").await.unwrap();
+
+        assert_eq!(b"hello world"[..], data);
     }
 }

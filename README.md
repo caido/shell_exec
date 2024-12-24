@@ -11,11 +11,11 @@ use std::time::Duration;
 use shell_exec::{Execution, Shell};
 
 let execution = Execution::builder()
-    .shell(Shell::Cmd)
+    .shell(Shell::Bash)
     .cmd(
         r#"
-        set /p input=""
-        echo hello %input%
+        INPUT=`cat -`;
+        echo "hello $INPUT"
         "#
         .to_string(),
     )

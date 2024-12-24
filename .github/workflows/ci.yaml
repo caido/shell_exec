@@ -38,8 +38,8 @@ jobs:
   test:
     needs: lint
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 5
-    
+    timeout-minutes: 10
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -52,6 +52,12 @@ jobs:
         uses: caido/action-setup-rust@v1
         with:
           cache: false
+
+      - name: Setup WSL
+        if: ${{ matrix.os == 'windows-latest' }}
+        uses: caido/action-setup-wsl@v4
+        with:
+          distribution: Ubuntu-22.04
 
       - name: Run tests
         run: cargo test

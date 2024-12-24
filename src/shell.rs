@@ -1,5 +1,7 @@
 use strum::{Display, EnumString};
 
+use crate::Argument;
+
 #[derive(Debug, EnumString, Display, Copy, Clone)]
 pub enum Shell {
     #[strum(serialize = "zsh")]
@@ -12,14 +14,17 @@ pub enum Shell {
     Cmd,
     #[strum(serialize = "powershell")]
     Powershell,
+    #[strum(serialize = "wsl")]
+    Wsl,
 }
 
 impl Shell {
-    pub fn command_arg<'a>(&self) -> &'a str {
+    pub fn command_args(&self) -> &[Argument<'static>] {
         match self {
-            Self::Cmd => "/C",
-            Self::Powershell => "-Command",
-            _ => "-c",
+            Self::Cmd => &[Argument::Normal("/C")],
+            Self::Powershell => &[Argument::Normal("-Command")],
+            Self::Wsl => &[Argument::Normal("bash"), Argument::Normal("-c")],
+            _ => &[Argument::Normal("-c")],
         }
     }
 }
