@@ -17,7 +17,16 @@ impl CommandArgument for Command {
         match arg {
             Argument::Normal(value) => self.arg(value),
             Argument::Path(value) => self.arg(value),
-            Argument::Raw(value) => self.raw_arg(value),
+            Argument::Raw(value) => {
+                #[cfg(windows)]
+                {
+                    self.raw_arg(value)
+                }
+                #[cfg(unix)]
+                {
+                    self.arg(value)
+                }
+            }
         }
     }
 }
