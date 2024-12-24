@@ -9,11 +9,11 @@ pub enum Argument<'a> {
 }
 
 pub trait CommandArgument {
-    fn argument<'a>(&mut self, arg: &Argument<'a>) -> &mut Self;
+    fn argument(&mut self, arg: &Argument<'_>) -> &mut Self;
 }
 
 impl CommandArgument for Command {
-    fn argument<'a>(&mut self, arg: &Argument<'a>) -> &mut Self {
+    fn argument(&mut self, arg: &Argument<'_>) -> &mut Self {
         match arg {
             Argument::Normal(value) => self.arg(value),
             Argument::Path(value) => self.arg(value),
