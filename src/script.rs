@@ -1,12 +1,11 @@
-use std::ffi::OsStr;
 use std::io::Write;
 
 use tempfile::TempPath;
 
-use crate::{Result, Shell, ShellError};
+use crate::{Argument, Result, Shell, ShellError};
 
 pub enum Script {
-    Inline(String),
+    Inline { raw: String, shell: Shell },
     File(TempPath),
 }
 
@@ -29,17 +28,18 @@ impl Script {
                 let file = write_file(raw).await?;
                 Self::File(file)
             }
-            _ => Self::Inline(raw),
+            _ => Self::Inline { raw, shell },
         };
         Ok(cmd)
     }
-}
 
-impl AsRef<OsStr> for &Script {
-    fn as_ref(&self) -> &OsStr {
+    pub fn argument(&self) -> Argument<'_> {
         match self {
-            Script::Inline(v) => v.as_ref(),
-            Script::File(v) => v.as_os_str(),
+            Script::Inline { raw, shell } => match shell {
+                Shell::Wsl => Argument::Raw(raw),
+                _ => Argument::Normal(raw),
+            },
+            Script::File(path) => Argument::Path(path.as_os_str()),
         }
     }
 }

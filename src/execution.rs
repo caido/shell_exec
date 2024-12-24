@@ -9,7 +9,7 @@ use tokio::process::Command;
 use tokio::time::timeout;
 use typed_builder::TypedBuilder;
 
-use crate::{Result, Script, Shell, ShellError};
+use crate::{CommandArgument, Result, Script, Shell, ShellError};
 
 #[derive(TypedBuilder)]
 pub struct Execution {
@@ -33,19 +33,17 @@ impl Execution {
         V: AsRef<OsStr>,
     {
         // Prepare script
-        let full_cmd = Script::build(self.shell, self.cmd, self.init).await?;
+        let script = Script::build(self.shell, self.cmd, self.init).await?;
 
         // Spawn
         // NOTE: If kill_on_drop is proven not sufficiently reliable, we might want to explicitly kill the process
         // before exiting the function. This approach is slower since it awaits the process termination.
         let mut builder = Command::new(self.shell.to_string());
-        if let Some(command_arg) = self.shell.command_arg() {
-            builder.arg(command_arg);
+        for arg in self.shell.command_args() {
+            builder.argument(arg);
         }
         let mut cmd_handle = builder
-            .arg("bash")
-            .arg("-c")
-            .arg(&full_cmd)
+            .argument(&script.argument())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -240,7 +238,7 @@ mod tests {
             .shell(Shell::Wsl)
             .cmd(
                 r#"
-                INPUT=`cat -`;
+                INPUT=$(cat);
                 echo "hello $INPUT"
                 "#
                 .to_string(),
