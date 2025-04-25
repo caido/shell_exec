@@ -1,6 +1,6 @@
 [package]
 name = "shell_exec"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Caido Labs Inc. <dev@caido.io>"]
 description = "Cross platform library to execute shell scripts"
 repository = "https://github.com/caido/shell_exec"
