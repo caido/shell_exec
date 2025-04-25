@@ -9,7 +9,7 @@ use tokio::process::Command;
 use tokio::time::timeout;
 use typed_builder::TypedBuilder;
 
-use crate::{CommandArgument, Result, Script, Shell, ShellError};
+use crate::{CommandArgument, EnvCollector, Result, Script, Shell, ShellError};
 
 #[derive(TypedBuilder)]
 pub struct Execution {
@@ -42,12 +42,19 @@ impl Execution {
         for arg in self.shell.command_args() {
             builder.argument(arg);
         }
+        let mut env_collector = EnvCollector::new(self.shell);
+        for (key, val) in envs {
+            env_collector.acc(key.as_ref(), val.as_ref());
+            builder.env(key, val);
+        }
+        if let Some((key, val)) = env_collector.collect() {
+            builder.env(key, val);
+        }
         let mut cmd_handle = builder
             .argument(&script.argument())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .envs(envs)
             .kill_on_drop(true)
             .spawn()
             .map_err(ShellError::FailedSpawn)?;
@@ -247,6 +254,28 @@ mod tests {
             .build();
 
         let data = execution.execute(b"world").await.unwrap();
+
+        assert_eq!(b"hello world"[..], data);
+    }
+
+    #[tokio::test]
+    #[cfg(windows)]
+    async fn should_execute_wsl_env() {
+        let execution = Execution::builder()
+            .shell(Shell::Wsl)
+            .cmd(
+                r#"
+                echo "hello $INPUT"
+                "#
+                .to_string(),
+            )
+            .timeout(Duration::from_millis(10000))
+            .build();
+
+        let data = execution
+            .execute_with_envs(b"", [("INPUT", "world")])
+            .await
+            .unwrap();
 
         assert_eq!(b"hello world"[..], data);
     }
