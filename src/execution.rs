@@ -18,6 +18,10 @@ pub struct Execution {
     cmd: String,
     #[builder(default)]
     init: Option<String>,
+    #[builder(default)]
+    post: Option<String>,
+    #[builder(default)]
+    delimiter: Option<String>,
 }
 
 impl Execution {
@@ -33,7 +37,7 @@ impl Execution {
         V: AsRef<OsStr>,
     {
         // Prepare script
-        let script = Script::build(self.shell, self.cmd, self.init).await?;
+        let script = Script::build(self.shell, self.cmd, self.init, self.post).await?;
 
         // Spawn
         // NOTE: If kill_on_drop is proven not sufficiently reliable, we might want to explicitly kill the process
@@ -98,6 +102,10 @@ impl Execution {
           result = get_output => result,
         }
     }
+
+    // TODO: If there is a delimiter string, split and use the latter
+    // Fallback to everything otherwise (or if no delimiter is set)
+    fn filter_output(&self, out: &Vec<u8>) -> Vec<u8> {}
 }
 
 #[cfg(test)]

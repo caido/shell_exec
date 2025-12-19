@@ -10,9 +10,14 @@ pub enum Script {
 }
 
 impl Script {
-    pub async fn build(shell: Shell, cmd: String, init: Option<String>) -> Result<Self> {
+    pub async fn build(
+        shell: Shell,
+        cmd: String,
+        init: Option<String>,
+        post: Option<String>,
+    ) -> Result<Self> {
         let init_script = match init.as_ref().map(|s| s.trim()) {
-            Some(init) if !init.is_empty() => init_line(init, shell),
+            Some(init) if !init.is_empty() => init.to_string(),
             _ => match shell {
                 Shell::Bash => init_line("source ~/.bashrc", shell),
                 Shell::Zsh => init_line("source ~/.zshrc", shell),
@@ -21,7 +26,9 @@ impl Script {
             },
         };
 
-        let raw = fix_newlines(shell, &format!("{init_script}\n{cmd}"));
+        let post_script = post.unwrap_or("".to_string());
+
+        let raw = fix_newlines(shell, &format!("{init_script}\n{cmd}\n{post_script}"));
 
         let cmd = match shell {
             Shell::Cmd => {
