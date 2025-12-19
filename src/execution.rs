@@ -103,9 +103,12 @@ impl Execution {
         }
     }
 
+    // When a delimiter is set and it is detected, only return what is after the
+    // delimiter (post-processing) and disreguard the actual cmd output
     fn filter_output<'a>(&self, raw: &'a Vec<u8>) -> Result<&'a [u8]> {
         if let Some(delimiter) = &self.delimiter {
             let raw_utf8 = String::from_utf8_lossy(raw);
+            // So it falls back to whole string if None
             if let Some(location) = raw_utf8.find(delimiter) {
                 let start_byte = location + delimiter.len();
                 return Ok(&raw[start_byte..]);
