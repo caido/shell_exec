@@ -1,4 +1,3 @@
-use bstr::{BStr, BString};
 use std::ffi::OsStr;
 use std::iter;
 use std::process::Stdio;
@@ -37,6 +36,9 @@ impl Execution {
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
+        // Capture values before moving self
+        let delimiter = self.delimiter.clone();
+
         // Prepare script
         let script = Script::build(self.shell, self.cmd, self.init, self.post).await?;
 
@@ -87,7 +89,8 @@ impl Execution {
 
             if output.status.success() {
                 let stripped_cmd_stdout = output.stdout.trim_end().to_vec();
-                Ok(stripped_cmd_stdout)
+                let filtered = filter_output(&stripped_cmd_stdout, &delimiter)?;
+                Ok(filtered.to_vec())
             } else {
                 Err(ShellError::Failure(
                     String::from_utf8_lossy(&output.stderr).into_owned(),
@@ -103,19 +106,18 @@ impl Execution {
           result = get_output => result,
         }
     }
+}
 
-    // When a delimiter is set and it is detected, only return what is after the
-    // delimiter (post-processing) and disreguard the actual cmd output
-    fn filter_output<'a>(&self, raw: &'a Vec<u8>) -> Result<&'a [u8]> {
-        if let Some(delimiter) = &self.delimiter {
-            // So it falls back to whole string if None
-            if let Some(location) = raw.find(delimiter.as_bytes()) {
-                let start_byte = location + delimiter.len();
-                return Ok(&raw[start_byte..]);
-            };
-        }
-        Ok(raw)
+// Helper function to filter output with delimiter
+fn filter_output<'a>(raw: &'a Vec<u8>, delimiter: &Option<String>) -> Result<&'a [u8]> {
+    // Will fall back to whole string if None or if not found
+    if let Some(delimiter) = delimiter {
+        if let Some(location) = raw.find(delimiter.as_bytes()) {
+            let start_byte = location + delimiter.len();
+            return Ok(&raw[start_byte..]);
+        };
     }
+    Ok(raw)
 }
 
 #[cfg(test)]
@@ -294,6 +296,35 @@ mod tests {
             .execute_with_envs(b"", [("INPUT", "world")])
             .await
             .unwrap();
+
+        assert_eq!(b"hello world"[..], data);
+    }
+
+    #[tokio::test]
+    #[cfg(unix)]
+    async fn should_filter_output_with_delimiter() {
+        let execution = Execution::builder()
+            .shell(Shell::Sh)
+            .cmd(r#"echo "before---after""#.to_string())
+            .delimiter(Some("---".to_string()))
+            .timeout(Duration::from_millis(10000))
+            .build();
+
+        let data = execution.execute(b"").await.unwrap();
+
+        assert_eq!(b"after"[..], data);
+    }
+
+    #[tokio::test]
+    #[cfg(unix)]
+    async fn should_return_full_output_without_delimiter() {
+        let execution = Execution::builder()
+            .shell(Shell::Sh)
+            .cmd(r#"echo "hello world""#.to_string())
+            .timeout(Duration::from_millis(10000))
+            .build();
+
+        let data = execution.execute(b"").await.unwrap();
 
         assert_eq!(b"hello world"[..], data);
     }
