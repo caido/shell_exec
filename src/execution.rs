@@ -103,9 +103,16 @@ impl Execution {
         }
     }
 
-    // TODO: If there is a delimiter string, split and use the latter
-    // Fallback to everything otherwise (or if no delimiter is set)
-    fn filter_output(&self, out: &Vec<u8>) -> Vec<u8> {}
+    fn filter_output<'a>(&self, raw: &'a Vec<u8>) -> Result<&'a [u8]> {
+        if let Some(delimiter) = &self.delimiter {
+            let raw_utf8 = String::from_utf8_lossy(raw);
+            if let Some(location) = raw_utf8.find(delimiter) {
+                let start_byte = location + delimiter.len();
+                return Ok(&raw[start_byte..]);
+            };
+        }
+        Ok(raw)
+    }
 }
 
 #[cfg(test)]
