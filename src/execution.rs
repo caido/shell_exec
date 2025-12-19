@@ -1,3 +1,4 @@
+use bstr::{BStr, BString};
 use std::ffi::OsStr;
 use std::iter;
 use std::process::Stdio;
@@ -107,9 +108,8 @@ impl Execution {
     // delimiter (post-processing) and disreguard the actual cmd output
     fn filter_output<'a>(&self, raw: &'a Vec<u8>) -> Result<&'a [u8]> {
         if let Some(delimiter) = &self.delimiter {
-            let raw_utf8 = String::from_utf8_lossy(raw);
             // So it falls back to whole string if None
-            if let Some(location) = raw_utf8.find(delimiter) {
+            if let Some(location) = raw.find(delimiter.as_bytes()) {
                 let start_byte = location + delimiter.len();
                 return Ok(&raw[start_byte..]);
             };
