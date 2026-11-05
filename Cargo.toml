@@ -1,11 +1,11 @@
 [package]
 name = "shell_exec"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Caido Labs Inc. <dev@caido.io>"]
 description = "Cross platform library to execute shell scripts"
 repository = "https://github.com/caido/shell_exec"
 license = "MIT"
-edition = "2021"
+edition = "2024"
 
 [lib]
 name = "shell_exec"
