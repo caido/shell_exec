@@ -16,15 +16,12 @@ impl EnvCollector {
     }
 
     pub fn acc(&mut self, key: &OsStr, _val: &OsStr) {
-        match self.shell {
-            Shell::Wsl => {
-                let buffer = self
-                    .buffer
-                    .get_or_insert_with(|| OsString::with_capacity(key.len() + 1));
-                buffer.push(key);
-                buffer.push(":");
-            }
-            _ => {}
+        if let Shell::Wsl = self.shell {
+            let buffer = self
+                .buffer
+                .get_or_insert_with(|| OsString::with_capacity(key.len() + 1));
+            buffer.push(key);
+            buffer.push(":");
         }
     }
 
